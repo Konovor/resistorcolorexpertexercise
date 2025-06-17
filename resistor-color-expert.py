@@ -1,53 +1,66 @@
-def resistor_label(colors):
-    UNIT = 'ohms'
-    codas = []
-    colars = {"black":'0',"brown":'1',"red":'2',"orange":'3',"yellow":'4',"green":'5',"blue":'6',"violet":'7',"grey":'8',"white":'9'}
-    zeros = {"black":0,"brown":1,"red":2,"orange":3,"yellow":4,"green":5,"blue":6,"violet":7,"grey":8,"white":9,}
-    tolers = { "grey": "0.05%","violet":"0.1%","blue":"0.25%","green":" ±0.5%","brown":"1%","red":"2%","gold":"5%", }
-    if len(colors)==1:
-        return "0 ohms"
-    if len(colors)==4:
-        for i in range(0,2):
-            codas.append(colars[colors[i]])
-        plier = zeros[colors[2]]
-        tocod = " ±"+tolers[colors[3]]
-    elif len(colors)==5:
-        for i in range(0,3):
-            codas.append(colars[colors[i]])
-        plier = int(colars[colors[3]])
-        tocod = " ±"+tolers[colors[4]]
+COLOR_TO_VALUE = {
+    'black': 0,
+    'brown': 1,
+    'red': 2,
+    'orange': 3,
+    'yellow': 4,
+    'green': 5,
+    'blue': 6,
+    'violet': 7,
+    'grey': 8,
+    'white': 9,
+}
 
-    if tocod == " ± ±0.5%":
-        tocod = " ±0.5%"
+COLOR_TO_FORMATTING = {
+   (4, 'black'): lambda first, second, third, tolerance: f"{first}{second} {UNIT} ±{tolerance}",
+   (4, 'brown'): lambda first, second, third, tolerance: f"{first}{second}0 {UNIT} ±{tolerance}",
+   (4, 'red'): lambda first, second, third, tolerance: f"{first}{dot_second(second)} kilo{UNIT} ±{tolerance}",
+   (4, 'orange'): lambda first, second, third, tolerance: f"{first}{second} kilo{UNIT} ±{tolerance}",
+   (4, 'yellow'): lambda first, second, third, tolerance: f"{first}{second}0 kilo{UNIT} ±{tolerance}",
+   (4, 'green'): lambda first, second, third, tolerance: f"{first}{dot_second(second)} mega{UNIT} ±{tolerance}",
+   (4, 'blue'): lambda first, second, third, tolerance: f"{first}{second} mega{UNIT} ±{tolerance}",
+   (4, 'violet'): lambda first, second, third, tolerance: f"{first}{second}0 mega{UNIT} ±{tolerance}",
+   (4, 'grey'): lambda first, second, third, tolerance: f"{first}{dot_second(second)} giga{UNIT} ±{tolerance}",
+   (4, 'white'): lambda first, second, third, tolerance: f"{first}{second} giga{UNIT} ±{tolerance}",
+   (5, 'black'): lambda first, second, third, tolerance: f"{first}{second}{third} {UNIT} ±{tolerance}",
+   (5, 'brown'): lambda first, second, third, tolerance: f"{first}.{second}{third} kilo{UNIT} ±{tolerance}",
+   (5, 'red'): lambda first, second, third, tolerance: f"{first}{second}.{third} kilo{UNIT} ±{tolerance}",
+   (5, 'orange'): lambda first, second, third, tolerance: f"{first}{second}{third} kilo{UNIT} ±{tolerance}",
+   (5, 'yellow'): lambda first, second, third, tolerance: f"{first}.{second}{third} mega{UNIT} ±{tolerance}",
+   (5, 'green'): lambda first, second, third, tolerance: f"{first}{second}.{third} mega{UNIT} ±{tolerance}",
+   (5, 'blue'): lambda first, second, third, tolerance: f"{first}{second}{third} mega{UNIT} ±{tolerance}",
+   (5, 'violet'): lambda first, second, third, tolerance: f"{first}.{second}{third} giga{UNIT} ±{tolerance}",
+   (5, 'grey'): lambda first, second, third, tolerance: f"{first}{second}.{third} giga{UNIT} ±{tolerance}",
+   (5, 'white'): lambda first, second, third, tolerance: f"{first}{second}{third} giga{UNIT} ±{tolerance}",
+}
 
-    if colors[-1] == "silver":
-        tocod = " ±10%"
+COLOR_TO_TOLERANCE = {
+    'grey': '0.05%',
+    'violet': '0.1%',
+    'blue': '0.25%',
+    'green': '0.5%',
+    'brown': '1%',
+    'red': '2%',
+    'gold': '5%',
+    'silver': '10%',
+    }
 
-    ccode = "".join(codas)
-    value_ccode = int(ccode)
-    value_ccode = value_ccode*(10 **plier)
-    
-    if value_ccode < 1000:
-        return str(value_ccode)+ " " + UNIT + tocod
-    else:
-        if value_ccode >= 10**9:
-            ohm_val = value_ccode/10**9
-            if ohm_val == int(ohm_val):
-                return f"{int(ohm_val)} gigaohms" + tocod
-            else:
-                return f"{ohm_val} gigaohms" + tocod
-        elif value_ccode >= 10**6:
-            ohm_val = value_ccode/10**6
-            if ohm_val == int(ohm_val):
-                return f"{int(ohm_val)} megaohms" + tocod
-            else:
-                return f"{ohm_val} megaohms" + tocod
-        else:
-            ohm_val = value_ccode/10**3
-            if ohm_val == int(ohm_val):
-                return f"{int(ohm_val)} kiloohms" + tocod
-            else:
-                return f"{ohm_val} kiloohms" + tocod
-    return str(value_ccode)+ " ohms" + tocod
+UNIT = 'ohms'
 
-    return "0 ohms"
+def dot_second(second: int) -> str:
+    return f".{second}" if second != 0 else ""
+
+def resistor_label(colors: list[str]) -> str:
+    num_bands = len(colors)
+    if num_bands == 1:
+        return '0 ohms'
+
+    first_digit = COLOR_TO_VALUE[colors[0]]
+    second_digit = COLOR_TO_VALUE[colors[1]]
+    third_digit = COLOR_TO_VALUE[colors[2]]
+    formatting_rule = COLOR_TO_FORMATTING[num_bands, colors[-2]]
+    tolerance = COLOR_TO_TOLERANCE[colors[-1]]
+
+    formatted = formatting_rule(first_digit, second_digit, third_digit, tolerance)
+
+    return formatted
