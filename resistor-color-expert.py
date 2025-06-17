@@ -24,18 +24,26 @@ COLOR_TO_TOLERANCE = {
 
 UNIT = 'ohms'
 
-def resistor_label(colors):
+def normalize_color_code(colors: list[str]) -> list[str]:
+    if len(colors) == 4:
+        # prepending a zero aligns all further processing of 4 or 5 band resistors
+        colors.insert(0, 'black')
+    return colors
+
+def resistor_label(colors: list[str]) -> str:
     if len(colors) == 1:
         return '0 ohms'
+
+    colors = normalize_color_code(colors)
+
     first_digit = COLOR_TO_VALUE[colors[0]]
     second_digit = COLOR_TO_VALUE[colors[1]]
     third_digit = COLOR_TO_VALUE[colors[2]]
     fourth_digit = COLOR_TO_VALUE[colors[3]]
+    tolerance = COLOR_TO_TOLERANCE[colors[4]]
 
-    resistance_value = (first_digit * 10 + second_digit) * (10 ** third_digit) if len(colors) == 4 else (first_digit * 100 + second_digit * 10 + third_digit) * (10 ** fourth_digit)
+    resistance_value = (first_digit * 100 + second_digit * 10 + third_digit) * (10 ** fourth_digit)
 
-    tolerance = COLOR_TO_TOLERANCE[colors[-1]]
-    
     # Format resistance without trailing zeros and proper unit
 
     if resistance_value >= 1_000_000_000:
