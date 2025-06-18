@@ -12,26 +12,26 @@ COLOR_TO_VALUE = {
 }
 
 COLOR_TO_FORMATTING = {
-   (4, 'black'): lambda first, second, third, tolerance: f"{first}{second} {UNIT} ±{tolerance}",
-   (4, 'brown'): lambda first, second, third, tolerance: f"{first}{second}0 {UNIT} ±{tolerance}",
-   (4, 'red'): lambda first, second, third, tolerance: f"{first}{dot_second(second)} kilo{UNIT} ±{tolerance}",
-   (4, 'orange'): lambda first, second, third, tolerance: f"{first}{second} kilo{UNIT} ±{tolerance}",
-   (4, 'yellow'): lambda first, second, third, tolerance: f"{first}{second}0 kilo{UNIT} ±{tolerance}",
-   (4, 'green'): lambda first, second, third, tolerance: f"{first}{dot_second(second)} mega{UNIT} ±{tolerance}",
-   (4, 'blue'): lambda first, second, third, tolerance: f"{first}{second} mega{UNIT} ±{tolerance}",
-   (4, 'violet'): lambda first, second, third, tolerance: f"{first}{second}0 mega{UNIT} ±{tolerance}",
-   (4, 'grey'): lambda first, second, third, tolerance: f"{first}{dot_second(second)} giga{UNIT} ±{tolerance}",
-   (4, 'white'): lambda first, second, third, tolerance: f"{first}{second} giga{UNIT} ±{tolerance}",
-   (5, 'black'): lambda first, second, third, tolerance: f"{first}{second}{third} {UNIT} ±{tolerance}",
-   (5, 'brown'): lambda first, second, third, tolerance: f"{first}.{second}{third} kilo{UNIT} ±{tolerance}",
-   (5, 'red'): lambda first, second, third, tolerance: f"{first}{second}.{third} kilo{UNIT} ±{tolerance}",
-   (5, 'orange'): lambda first, second, third, tolerance: f"{first}{second}{third} kilo{UNIT} ±{tolerance}",
-   (5, 'yellow'): lambda first, second, third, tolerance: f"{first}.{second}{third} mega{UNIT} ±{tolerance}",
-   (5, 'green'): lambda first, second, third, tolerance: f"{first}{second}.{third} mega{UNIT} ±{tolerance}",
-   (5, 'blue'): lambda first, second, third, tolerance: f"{first}{second}{third} mega{UNIT} ±{tolerance}",
-   (5, 'violet'): lambda first, second, third, tolerance: f"{first}.{second}{third} giga{UNIT} ±{tolerance}",
-   (5, 'grey'): lambda first, second, third, tolerance: f"{first}{second}.{third} giga{UNIT} ±{tolerance}",
-   (5, 'white'): lambda first, second, third, tolerance: f"{first}{second}{third} giga{UNIT} ±{tolerance}",
+   (4, 'black'): lambda first, second, third: f"{first}{second} ",
+   (4, 'brown'): lambda first, second, third: f"{first}{second}0 ",
+   (4, 'red'): lambda first, second, third: f"{first}{dot_cutoff(second)} kilo",
+   (4, 'orange'): lambda first, second, third: f"{first}{second} kilo",
+   (4, 'yellow'): lambda first, second, third: f"{first}{second}0 kilo",
+   (4, 'green'): lambda first, second, third: f"{first}{dot_cutoff(second)} mega",
+   (4, 'blue'): lambda first, second, third: f"{first}{second} mega",
+   (4, 'violet'): lambda first, second, third: f"{first}{second}0 mega",
+   (4, 'grey'): lambda first, second, third: f"{first}{dot_cutoff(second)} giga",
+   (4, 'white'): lambda first, second, third: f"{first}{second} giga",
+   (5, 'black'): lambda first, second, third: f"{first}{second}{third} ",
+   (5, 'brown'): lambda first, second, third: f"{first}{dot_cutoff(second, third)} kilo",
+   (5, 'red'): lambda first, second, third: f"{first}{second}{dot_cutoff(third)} kilo",
+   (5, 'orange'): lambda first, second, third: f"{first}{second}{third} kilo",
+   (5, 'yellow'): lambda first, second, third: f"{first}{dot_cutoff(second, third)} mega",
+   (5, 'green'): lambda first, second, third: f"{first}{second}{dot_cutoff(third)} mega",
+   (5, 'blue'): lambda first, second, third: f"{first}{second}{third} mega",
+   (5, 'violet'): lambda first, second, third: f"{first}{dot_cutoff(second, third)} giga",
+   (5, 'grey'): lambda first, second, third: f"{first}{second}{dot_cutoff(third)} giga",
+   (5, 'white'): lambda first, second, third: f"{first}{second}{third} giga",
 }
 
 COLOR_TO_TOLERANCE = {
@@ -47,20 +47,26 @@ COLOR_TO_TOLERANCE = {
 
 UNIT = 'ohms'
 
-def dot_second(second: int) -> str:
-    return f".{second}" if second != 0 else ""
+def dot_cutoff(*digits: int) -> str:
+    if all(d == 0 for d in digits):
+        return ""
+    return "." + "".join(str(d) for d in digits).rstrip("0")
 
 def resistor_label(colors: list[str]) -> str:
     num_bands = len(colors)
     if num_bands == 1:
         return '0 ohms'
 
-    first_digit = COLOR_TO_VALUE[colors[0]]
-    second_digit = COLOR_TO_VALUE[colors[1]]
-    third_digit = COLOR_TO_VALUE[colors[2]]
-    formatting_rule = COLOR_TO_FORMATTING[num_bands, colors[-2]]
-    tolerance = COLOR_TO_TOLERANCE[colors[-1]]
+    first_color, second_color, third_color, *unused = colors
+    *unused, formatting_color, tolerance_color = colors
 
-    formatted = formatting_rule(first_digit, second_digit, third_digit, tolerance)
+    first_digit = COLOR_TO_VALUE[first_color]
+    second_digit = COLOR_TO_VALUE[second_color]
+    third_digit = COLOR_TO_VALUE[third_color]
 
-    return formatted
+    formatting_rule = COLOR_TO_FORMATTING[num_bands, formatting_color]
+    tolerance = COLOR_TO_TOLERANCE[tolerance_color]
+
+    formatted = formatting_rule(first_digit, second_digit, third_digit)
+
+    return f"{formatted}{UNIT} ±{tolerance}"
